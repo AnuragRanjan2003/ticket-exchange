@@ -21,11 +21,11 @@ export default function Home() {
         </p>
         <div className="flex justify-around w-[40vw] mt-10">
           <Link href={"/connect"}>
-            <Button className="h-14 w-[14vw]" variant={"secondary"}>
-              Get Started
-            </Button>
+            <Button className="h-14 w-[14vw]">Get Started</Button>
           </Link>
-          <Button className="h-14 w-[14vw]">Join Community</Button>
+          <Button className="h-14 w-[14vw]" variant={"secondary"}>
+            Join Community
+          </Button>
         </div>
       </main>
       <main className="flex pr-40 pl-40 bg-black items-center justify-between h-[100vh]">

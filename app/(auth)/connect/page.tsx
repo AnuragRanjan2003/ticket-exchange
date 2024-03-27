@@ -40,7 +40,9 @@ const Connect = () => {
           </div>
         </CardContent>
         <CardFooter className="flex justify-around w-full mt-3">
-          <Button>Submit</Button>
+          <Link href={"/tickets"}>
+            <Button>Submit</Button>
+          </Link>
           <Link href={"/"}>
             <Button variant={"outline"}>Go Back</Button>
           </Link>
