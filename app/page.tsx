@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment } from "react";
@@ -21,7 +22,11 @@ export default function Home() {
         </p>
         <div className="flex justify-around w-[40vw] mt-10">
           <Link href={"/connect"}>
-            <Button className="h-14 w-[14vw]">Get Started</Button>
+            <Button
+              className={cn("h-14 w-[14vw] bg-purple-600 hover:bg-purple-900")}
+            >
+              Get Started
+            </Button>
           </Link>
           <Button className="h-14 w-[14vw]" variant={"secondary"}>
             Join Community

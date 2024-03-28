@@ -6,10 +6,11 @@ const TicketTableHeader = () => {
     <TableRow>
       <TableHead>Train</TableHead>
       <TableHead>start</TableHead>
-      <TableHead>arrival</TableHead>
+      <TableHead>time</TableHead>
       <TableHead>end</TableHead>
-      <TableHead>deprture</TableHead>
+      <TableHead>time</TableHead>
       <TableHead>Price</TableHead>
+      <TableHead>Action</TableHead>
     </TableRow>
   );
 };

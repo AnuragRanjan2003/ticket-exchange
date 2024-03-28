@@ -17,7 +17,7 @@ import React from "react";
 
 const Connect = () => {
   return (
-    <main className="bg-gray-300 flex flex-col justify-center items-center h-screen">
+    <main className="bg-gray-100 flex flex-col justify-center items-center h-screen">
       <Card className="w-[50vw]  flex flex-col items-center justify-evenly pt-5 pb-5">
         <CardHeader className="flex flex-col items-center">
           <Avatar>
@@ -31,21 +31,27 @@ const Connect = () => {
           <div className="w-[300px]">
             <Label htmlFor="pk">Public Key</Label>
             <Input className="" placeholder="a31f45Ef...." id="pk" />
-            <br></br>
-            <Label htmlFor="name">Display Name</Label>
+            <p className="mt-4 mb-4"></p>
+            <Label htmlFor="name" className="mt-2">
+              Display Name
+            </Label>
             <Input placeholder="Jhon Doe" id="name" />
-            <br></br>
+            <p className="mt-4 mb-4"></p>
             <Label htmlFor="sk">Private Key</Label>
             <Input placeholder="e30f45Ef...." id="sk" />
           </div>
+
+          <Button asChild className="w-full mt-4">
+            <Link href="/tickets">Submit</Link>
+          </Button>
+          <Button variant={"outline"} className="w-full mt-4">
+            Connect MetaMask
+          </Button>
         </CardContent>
-        <CardFooter className="flex justify-around w-full mt-3">
-          <Link href={"/tickets"}>
-            <Button>Submit</Button>
-          </Link>
-          <Link href={"/"}>
-            <Button variant={"outline"}>Go Back</Button>
-          </Link>
+        <CardFooter>
+          <Button variant={"link"} asChild>
+            <Link href="/">Go Back</Link>
+          </Button>
         </CardFooter>
       </Card>
     </main>

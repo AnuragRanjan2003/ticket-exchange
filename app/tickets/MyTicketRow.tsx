@@ -1,15 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Ticket } from "@/lib/types/ticket";
-import { cn } from "@/lib/utils";
 import React from "react";
 
-const TicketRow = ({
+const MyTicketRow = ({
   ticket,
-  action,
+  cancel,
 }: {
   ticket: Ticket;
-  action: (ticket: Ticket) => void;
+  cancel: (ticket: Ticket) => void;
 }) => {
   return (
     <TableRow key={ticket.id}>
@@ -21,16 +20,16 @@ const TicketRow = ({
       <TableCell>{`₹ ${ticket.originalCost}`}</TableCell>
       <TableCell>
         <Button
-          className={cn("bg-black hover:bg-slate-700 ")}
+          variant={"destructive"}
           onClick={() => {
-            action(ticket);
+            cancel(ticket);
           }}
         >
-          Buy
+          Cancel
         </Button>
       </TableCell>
     </TableRow>
   );
 };
 
-export default TicketRow;
+export default MyTicketRow;

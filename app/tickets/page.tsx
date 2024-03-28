@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 
 import { Ticket } from "@/lib/types/ticket";
@@ -13,6 +15,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SearchIcon } from "lucide-react";
+import MyTicketRow from "./MyTicketRow";
+import MyAccount from "./(account)/myAccount";
+import { User } from "@/lib/types/user";
 
 const list: Ticket[] = [];
 
@@ -29,6 +34,20 @@ for (let i = 0; i < tickets; i++) {
     originalCost: 50,
   });
 }
+
+const action = (t: Ticket) => {
+  alert(t.id);
+};
+
+const cancel = (t: Ticket) => {
+  alert(t.id);
+};
+
+const user: User = {
+  name: "abc",
+  publicKey: "123456",
+  privateKey: "123456",
+};
 
 const Tickets = () => {
   return (
@@ -56,15 +75,25 @@ const Tickets = () => {
         </div>
         <TabsContent value="tickets">
           <Table>
-            <TableHeader className="">
+            <TableHeader>
               <TicketTableHeader />
             </TableHeader>
-            <TableBody>{list.map((ticket) => TicketRow({ ticket }))}</TableBody>
+            <TableBody>
+              {list.map((ticket) => TicketRow({ ticket, action }))}
+            </TableBody>
           </Table>
         </TabsContent>
         <TabsContent value="my tickets">
-          <p>My Tickets</p>
+          <Table>
+            <TableHeader>
+              <TicketTableHeader />
+            </TableHeader>
+            <TableBody>
+              {list.map((ticket) => MyTicketRow({ ticket, cancel }))}
+            </TableBody>
+          </Table>
         </TabsContent>
+        <TabsContent value="account">{MyAccount({ user })}</TabsContent>
       </Tabs>
     </main>
   );
