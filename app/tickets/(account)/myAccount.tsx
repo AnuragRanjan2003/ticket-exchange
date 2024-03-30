@@ -15,6 +15,7 @@ import Link from "next/link";
 import IssueTickets from "./IssueTickets";
 
 const myAccount = ({ user }: { user: User }) => {
+  console.log(user);
   return (
     <main className="flex  h-screen">
       <div className="flex flex-col w-1/3">
@@ -42,7 +43,7 @@ const myAccount = ({ user }: { user: User }) => {
         </Card>
         <BlockChainData />
       </div>
-      {IssueTickets()}
+      {IssueTickets({ user })}
     </main>
   );
 };

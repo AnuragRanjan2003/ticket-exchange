@@ -4,10 +4,10 @@ import React from "react";
 
 const AccountDataRow = ({ lable, value }: { lable: string; value: string }) => {
   return (
-    <TableRow>
-      <TableCell className={cn("font-semibold")}>{lable}</TableCell>
-      <TableCell className={cn("text-right")}>{value}</TableCell>
-    </TableRow>
+    <div className="flex justify-between mt-2 mb-2">
+      <h2>{lable}</h2>
+      <p>{value}</p>
+    </div>
   );
 };
 

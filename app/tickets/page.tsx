@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import "dotenv/config";
 
 import { Ticket } from "@/lib/types/ticket";
 import {
@@ -14,10 +15,14 @@ import TicketRow from "./ticketRow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SearchIcon } from "lucide-react";
+import { RefreshCwIcon, RefreshCwOffIcon, SearchIcon } from "lucide-react";
 import MyTicketRow from "./MyTicketRow";
 import MyAccount from "./(account)/myAccount";
 import { User } from "@/lib/types/user";
+import { Contract } from "ethers";
+import { initializeContract } from "@/lib/contract/contract";
+import { createProvider } from "@/lib/contract/CreateProvider";
+import { getTicketForUser } from "@/lib/contract/functions/GetTicketsForUser";
 
 const list: Ticket[] = [];
 
@@ -43,13 +48,43 @@ const cancel = (t: Ticket) => {
   alert(t.id);
 };
 
-const user: User = {
-  name: "abc",
-  publicKey: "123456",
-  privateKey: "123456",
-};
+let name = "";
+let sk = "";
+let pk = "";
 
 const Tickets = () => {
+  const [user, setUser] = useState<User | undefined>(undefined);
+  const [contract, setContract] = useState<Contract | undefined>(undefined);
+  const [tickets, setTickets] = useState<Ticket[]>(Array<Ticket>());
+
+  useEffect(() => {
+    name = localStorage.getItem("name")!;
+    sk = localStorage.getItem("sk")!;
+    pk = localStorage.getItem("pk")!;
+    console.log("effect triggered");
+    let user: User = {
+      name: name,
+      publicKey: pk,
+      privateKey: sk,
+    };
+    setUser(user);
+    let provider = createProvider(process.env.NEXT_PUBLIC_ALCHEMY_URL!);
+    let contract = initializeContract(
+      provider,
+      process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!,
+      sk
+    );
+    setContract(contract);
+  }, []);
+
+  if (user == undefined || contract == undefined) {
+    return (
+      <main className="flex flex-col justify-center items-center h-[100vh]">
+        <h2>Loading...</h2>
+      </main>
+    );
+  }
+
   return (
     <main className="pr-10 pl-10 pt-5 w-[100vw]">
       <p className="text-3xl font-bold">Buy Tickets</p>
@@ -84,12 +119,35 @@ const Tickets = () => {
           </Table>
         </TabsContent>
         <TabsContent value="my tickets">
+          <Button
+            variant={"outline"}
+            size={"icon"}
+            onClick={() => {
+              const newContract = initializeContract(
+                createProvider(process.env.NEXT_PUBLIC_ALCHEMY_URL!),
+                process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!,
+                user.privateKey
+              );
+
+              console.log(newContract);
+              getTicketForUser(user.publicKey, newContract)
+                .then((data) => {
+                  console.log(data);
+                  setTickets(data);
+                })
+                .catch((err) => {
+                  console.log("error: " + err);
+                });
+            }}
+          >
+            <RefreshCwIcon className="h-4 w-4" />
+          </Button>
           <Table>
             <TableHeader>
               <TicketTableHeader />
             </TableHeader>
             <TableBody>
-              {list.map((ticket) => MyTicketRow({ ticket, cancel }))}
+              {tickets.map((ticket) => MyTicketRow({ ticket, cancel }))}
             </TableBody>
           </Table>
         </TabsContent>
