@@ -1,4 +1,3 @@
-"use client";
 import {
   Card,
   CardContent,
@@ -9,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import moment from "moment";
 import { Divide, Loader2 } from "lucide-react";
 import React, { useState } from "react";
 import IssueInputField from "./IssueInputField";
@@ -18,18 +18,38 @@ import "dotenv/config";
 import { Ticket } from "@/lib/types/ticket";
 import ShortUniqueId from "short-unique-id";
 import { issueTicket } from "@/lib/contract/functions/IssueTicket";
-import { initializeContract } from "@/lib/contract/contract";
-import { createProvider } from "@/lib/contract/CreateProvider";
 
-const IssueTickets = ({ user }: { user: User }) => {
+import { createProvider } from "@/lib/contract/CreateProvider";
+import { toast } from "sonner";
+import { Contract } from "ethers";
+import { getSigner } from "@/lib/contract/getSigner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { SelectTrigger } from "@radix-ui/react-select";
+import { Label } from "@/components/ui/label";
+
+const IssueTickets = async ({
+  user,
+  contract,
+}: {
+  user: User;
+  contract: Contract;
+}) => {
   let contractOwner = process.env.NEXT_PUBLIC_CONTRACT_OWNER;
   let trainName = "";
   let start = "";
-  let startTime = 0;
+  let startTime = "";
   let end = "";
-  let endTime = 0;
+  let endTime = "";
   let price = 0;
   let to = "";
+
+  const signer = await getSigner(window.ethereum!);
+  const address = await signer.getAddress();
 
   return (
     <Card className="w-2/3 ml-2">
@@ -40,22 +60,31 @@ const IssueTickets = ({ user }: { user: User }) => {
       <CardContent>
         <Separator />
         {contractOwner == undefined ||
-        contractOwner.toLowerCase() != user.publicKey.toLowerCase() ? (
+        contractOwner.toLowerCase() != address.toLowerCase() ? (
           <div className="flex flex-col justify-center items-center h-[70vh] w-full">
             <h2>Not Available</h2>
           </div>
         ) : (
           <div className="overflow-y-auto h-[70vh]">
-            {IssueInputField(
-              {
-                lable: "Train Name",
-                placeholder: "AbcExpress",
-                desc: "Name of the train in which the ticket is being issued",
-              },
-              (e) => {
-                trainName = e;
-              }
-            )}
+            {
+              <div className="w-2/3 flex flex-col  pl-2 pt-4 pb-4">
+                <Label>Train</Label>
+                <Select
+                  onValueChange={(value) => {
+                    trainName = value;
+                  }}
+                >
+                  <SelectTrigger className="w-[180px] border rounded">
+                    <SelectValue placeholder="Select a Train" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Train A">A</SelectItem>
+                    <SelectItem value="Train B">B</SelectItem>
+                    <SelectItem value="Train C">C</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            }
             {IssueInputField(
               {
                 lable: "Start Destination",
@@ -69,11 +98,11 @@ const IssueTickets = ({ user }: { user: User }) => {
             {IssueInputField(
               {
                 lable: "Start Time",
-                placeholder: "12-Mar-2024 11:15am",
+                placeholder: "12/05/2024 11:00",
                 desc: "Time of trains arrival at start destination",
               },
               (e) => {
-                startTime = 12;
+                startTime = e;
               }
             )}
             {IssueInputField(
@@ -89,13 +118,14 @@ const IssueTickets = ({ user }: { user: User }) => {
             {IssueInputField(
               {
                 lable: "End Time",
-                placeholder: "16-Mar-2024 17:15am",
+                placeholder: "05/12/2024 17:59",
                 desc: "Time of trains arrival at end destination",
               },
               (e) => {
-                endTime = 25;
+                endTime = e;
               }
             )}
+
             {IssueInputField(
               {
                 lable: "Issued to",
@@ -108,8 +138,8 @@ const IssueTickets = ({ user }: { user: User }) => {
             )}
             {IssueInputField(
               {
-                lable: "Price",
-                placeholder: "₹500",
+                lable: "Price(₹)",
+                placeholder: "500",
                 desc: "Price at which the ticket is issued",
               },
               (e) => {
@@ -125,7 +155,9 @@ const IssueTickets = ({ user }: { user: User }) => {
                   end.length == 0 ||
                   trainName.length == 0
                 ) {
-                  alert("field is empty");
+                  toast("Error", {
+                    description: "Fields were empty",
+                  });
                   return;
                 }
                 const uid = new ShortUniqueId({ length: 10 });
@@ -134,23 +166,24 @@ const IssueTickets = ({ user }: { user: User }) => {
                   trainName: trainName,
                   originalCost: price,
                   start: start,
-                  startTime: startTime,
+                  startTime: moment(startTime).unix(),
                   end: end,
-                  endTime: endTime,
+                  endTime: moment(endTime).unix(),
                 };
                 console.log(ticket);
-                const contract = initializeContract(
-                  createProvider(process.env.NEXT_PUBLIC_ALCHEMY_URL!),
-                  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!,
-                  user.privateKey
-                );
 
+                toast("Issue Ticket", {
+                  description:
+                    "The request has been sent to the blockchain. Please wait for confirmation",
+                });
                 issueTicket(ticket, to, contract)
                   .then((ticket) => {
                     console.log("added to bc" + ticket);
+                    toast.success("Ticket Issued");
                   })
                   .catch((err) => {
                     console.log(err);
+                    toast.error("some error occurred");
                   });
               }}
             >

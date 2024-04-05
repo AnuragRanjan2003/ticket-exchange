@@ -5,8 +5,8 @@ import React from "react";
 const AccountDataRow = ({ lable, value }: { lable: string; value: string }) => {
   return (
     <div className="flex justify-between mt-2 mb-2">
-      <h2>{lable}</h2>
-      <p>{value}</p>
+      <h1>{lable}</h1>
+      <p className="text-sm">{value}</p>
     </div>
   );
 };

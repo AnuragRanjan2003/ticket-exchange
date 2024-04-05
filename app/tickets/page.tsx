@@ -15,79 +15,116 @@ import TicketRow from "./ticketRow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RefreshCwIcon, RefreshCwOffIcon, SearchIcon } from "lucide-react";
+import { RefreshCwIcon } from "lucide-react";
 import MyTicketRow from "./MyTicketRow";
 import MyAccount from "./(account)/myAccount";
 import { User } from "@/lib/types/user";
-import { Contract } from "ethers";
-import { initializeContract } from "@/lib/contract/contract";
+import { Contract, errors, providers } from "ethers";
+import { initializeContractWithWeb3 } from "@/lib/contract/contract";
 import { createProvider } from "@/lib/contract/CreateProvider";
 import { getTicketForUser } from "@/lib/contract/functions/GetTicketsForUser";
-
-const list: Ticket[] = [];
-
-const tickets = 20;
-
-for (let i = 0; i < tickets; i++) {
-  list.push({
-    id: `${i}`,
-    trainName: `Train ${i}`,
-    start: "a",
-    end: "b",
-    startTime: 0,
-    endTime: 5,
-    originalCost: 50,
-  });
-}
-
-const action = (t: Ticket) => {
-  alert(t.id);
-};
-
-const cancel = (t: Ticket) => {
-  alert(t.id);
-};
+import { getCancelledTickets } from "@/lib/contract/functions/GetCancelledTickets";
+import TicketsLoading from "./ticketsLoading";
+import { AlertDialog } from "@/components/ui/alert-dialog";
+import ContractErrorPage from "./ContractErrorPage";
 
 let name = "";
 let sk = "";
 let pk = "";
 
+declare global {
+  interface Window {
+    ethereum?: providers.ExternalProvider;
+  }
+}
+
 const Tickets = () => {
   const [user, setUser] = useState<User | undefined>(undefined);
   const [contract, setContract] = useState<Contract | undefined>(undefined);
   const [tickets, setTickets] = useState<Ticket[]>(Array<Ticket>());
+  const [allTickets, setAllTickets] = useState<Ticket[]>(Array<Ticket>());
+  const [ticketLoading, setTicketLoading] = useState<boolean>(false);
+  const [allLoading, setAllLoading] = useState<boolean>(false);
+  const [search, setSearch] = useState<string>("");
+  const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    name = localStorage.getItem("name")!;
-    sk = localStorage.getItem("sk")!;
-    pk = localStorage.getItem("pk")!;
+  
     console.log("effect triggered");
+
     let user: User = {
-      name: name,
-      publicKey: pk,
-      privateKey: sk,
+      name: "",
+      publicKey: "",
     };
     setUser(user);
     let provider = createProvider(process.env.NEXT_PUBLIC_ALCHEMY_URL!);
-    let contract = initializeContract(
-      provider,
-      process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!,
-      sk
-    );
-    setContract(contract);
+
+    try {
+      initializeContractWithWeb3(
+        provider,
+        window.ethereum!,
+        process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!
+      ).then((c) => {
+        setContract(c);
+        fetchMyTickets(
+          c,
+          () => {
+            setTicketLoading(true);
+          },
+          (data) => {
+            setTicketLoading(false);
+            setTickets(data);
+          },
+          (err) => {
+            setTicketLoading(false);
+          }
+        );
+        fetchAllTickets(
+          user,
+          c,
+          () => {
+            setAllLoading(true);
+          },
+          (data) => {
+            setAllLoading(false);
+            setAllTickets(data);
+          },
+          (err) => {
+            setAllLoading(false);
+          }
+        );
+      });
+    } catch (e) {
+      setContract(undefined);
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError("something went wrong");
+      }
+      console.log(e);
+    }
   }, []);
 
-  if (user == undefined || contract == undefined) {
+  if (user == undefined) {
     return (
-      <main className="flex flex-col justify-center items-center h-[100vh]">
-        <h2>Loading...</h2>
+      <main>
+        <TicketsLoading />
       </main>
     );
   }
 
+  if (error != undefined) {
+    return (
+      <main>
+        <ContractErrorPage error={error} />
+      </main>
+    );
+  }
+
+  contract!;
+
   return (
-    <main className="pr-10 pl-10 pt-5 w-[100vw]">
-      <p className="text-3xl font-bold">Buy Tickets</p>
+    <main className="pr-10 pl-10 pt-2 w-[100vw]">
       <Tabs defaultValue="tickets" className="mt-8">
         <div className="flex justify-between">
           <TabsList className="w-[30vw]">
@@ -101,60 +138,150 @@ const Tickets = () => {
               Account
             </TabsTrigger>
           </TabsList>
-          <div className="flex justify-between">
-            <Input placeholder="search train" className="w-[30vw] mr-2" />
-            <Button variant={"outline"}>
-              <SearchIcon className="h-4" />
-            </Button>
-          </div>
+          <Input
+            placeholder="search train"
+            className="w-[30vw] mr-2"
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
+          />
         </div>
         <TabsContent value="tickets">
-          <Table>
-            <TableHeader>
-              <TicketTableHeader />
-            </TableHeader>
-            <TableBody>
-              {list.map((ticket) => TicketRow({ ticket, action }))}
-            </TableBody>
-          </Table>
+          <AlertDialog>
+            <Button
+              variant={"outline"}
+              size={"icon"}
+              onClick={() => {
+                fetchAllTickets(
+                  user,
+                  contract!,
+                  () => {
+                    setAllLoading(true);
+                  },
+                  (data) => {
+                    setAllLoading(false);
+                    setAllTickets(data);
+                  },
+                  (err) => {
+                    setAllLoading(false);
+                  }
+                );
+              }}
+            >
+              <RefreshCwIcon className="h-4 w-4" />
+            </Button>
+            {allLoading || contract == undefined ? (
+              <TicketsLoading />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TicketTableHeader />
+                </TableHeader>
+                {allTickets.length == 0 ? (
+                  <p>No Tickets</p>
+                ) : (
+                  <TableBody>
+                    {allTickets
+                      .filter((t) => {
+                        return (
+                          search.length == 0 || t.trainName.includes(search)
+                        );
+                      })
+                      .map((ticket) => TicketRow({ ticket, user, contract }))}
+                  </TableBody>
+                )}
+              </Table>
+            )}
+          </AlertDialog>
         </TabsContent>
         <TabsContent value="my tickets">
           <Button
             variant={"outline"}
             size={"icon"}
             onClick={() => {
-              const newContract = initializeContract(
-                createProvider(process.env.NEXT_PUBLIC_ALCHEMY_URL!),
-                process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!,
-                user.privateKey
-              );
-
-              console.log(newContract);
-              getTicketForUser(user.publicKey, newContract)
-                .then((data) => {
-                  console.log(data);
+              fetchMyTickets(
+                contract!,
+                () => {
+                  setTicketLoading(true);
+                },
+                (data) => {
+                  setTicketLoading(false);
                   setTickets(data);
-                })
-                .catch((err) => {
-                  console.log("error: " + err);
-                });
+                },
+                (err) => {
+                  setTicketLoading(false);
+                }
+              );
             }}
           >
             <RefreshCwIcon className="h-4 w-4" />
           </Button>
-          <Table>
-            <TableHeader>
-              <TicketTableHeader />
-            </TableHeader>
-            <TableBody>
-              {tickets.map((ticket) => MyTicketRow({ ticket, cancel }))}
-            </TableBody>
-          </Table>
+          {ticketLoading || contract == undefined ? (
+            <TicketsLoading />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TicketTableHeader />
+              </TableHeader>
+              <TableBody>
+                {tickets
+                  .filter((t) => {
+                    return search.length == 0 || t.trainName.includes(search);
+                  })
+                  .map((ticket) => MyTicketRow({ ticket, user, contract }))}
+              </TableBody>
+            </Table>
+          )}
         </TabsContent>
-        <TabsContent value="account">{MyAccount({ user })}</TabsContent>
+        {contract != undefined ? (
+          <TabsContent value="account">
+            {MyAccount({ user, contract })}
+          </TabsContent>
+        ) : (
+          <p>no contract</p>
+        )}
       </Tabs>
     </main>
   );
 };
 
 export default Tickets;
+
+function fetchMyTickets(
+  newContract: Contract,
+  preUpdate: () => void,
+  successUpdate: (data: Ticket[]) => void,
+  failureUpdate: (err: any) => void
+) {
+  preUpdate();
+  console.log(newContract);
+  getTicketForUser(newContract)
+    .then((data) => {
+      successUpdate(data);
+      console.log(data);
+    })
+    .catch((err) => {
+      failureUpdate(err);
+      console.log("error: " + err);
+    });
+}
+
+function fetchAllTickets(
+  user: User,
+  newContract: Contract,
+  preUpdate: () => void,
+  successUpdate: (data: Ticket[]) => void,
+  failureUpdate: (err: any) => void
+) {
+  preUpdate();
+  console.log(newContract);
+  getCancelledTickets(newContract)
+    .then((data) => {
+      successUpdate(data);
+      console.log(data);
+    })
+    .catch((err) => {
+      failureUpdate(err);
+      console.log("error: " + err);
+    });
+}

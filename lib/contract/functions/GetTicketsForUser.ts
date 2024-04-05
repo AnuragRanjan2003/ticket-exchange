@@ -1,10 +1,7 @@
 import { Ticket } from "@/lib/types/ticket";
 import { BigNumber, Contract } from "ethers";
 
-export async function getTicketForUser(
-  address: string,
-  contract: Contract
-): Promise<Ticket[]> {
+export async function getTicketForUser(contract: Contract): Promise<Ticket[]> {
   let data: Array<any> = await contract.getMyTickets();
   let list: Ticket[] = [];
 

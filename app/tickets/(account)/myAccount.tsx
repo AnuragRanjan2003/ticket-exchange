@@ -13,8 +13,9 @@ import BlockChainData from "./blockChainData";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import IssueTickets from "./IssueTickets";
+import { Contract } from "ethers";
 
-const myAccount = ({ user }: { user: User }) => {
+const myAccount = ({ user, contract }: { user: User; contract: Contract }) => {
   console.log(user);
   return (
     <main className="flex  h-screen">
@@ -32,10 +33,28 @@ const myAccount = ({ user }: { user: User }) => {
               value: "*******************",
             })}
             <div className="w-full mt-4 flex">
-              <Button className="w-1/2" variant={"default"} asChild>
+              <Button
+                className="w-1/2"
+                variant={"default"}
+                asChild
+                onClick={() => {
+                  localStorage.setItem("name", "");
+                  localStorage.setItem("pk", "");
+                  localStorage.setItem("sk", "");
+                }}
+              >
                 <Link href="/">Leave</Link>
               </Button>
-              <Button asChild className="w-1/2 ml-2" variant={"outline"}>
+              <Button
+                asChild
+                className="w-1/2 ml-2"
+                variant={"outline"}
+                onClick={() => {
+                  localStorage.setItem("name", "");
+                  localStorage.setItem("pk", "");
+                  localStorage.setItem("sk", "");
+                }}
+              >
                 <Link href="/connect">Switch</Link>
               </Button>
             </div>
@@ -43,7 +62,7 @@ const myAccount = ({ user }: { user: User }) => {
         </Card>
         <BlockChainData />
       </div>
-      {IssueTickets({ user })}
+      {IssueTickets({ user, contract })}
     </main>
   );
 };

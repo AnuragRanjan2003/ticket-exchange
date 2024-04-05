@@ -1,6 +1,7 @@
 import { Contract, Wallet, providers } from "ethers";
-import { abi , newAbi } from "./abi";
+import { abi, newAbi } from "./abi";
 import { createWallet } from "./CreateWallet";
+import { getSigner } from "./getSigner";
 
 function getContract(
   provider: providers.JsonRpcProvider,
@@ -13,7 +14,7 @@ function attachWallet(contract: Contract, wallet: Wallet): Contract {
   return contract.connect(wallet);
 }
 
-export function initializeContract(
+function initializeContract(
   provider: providers.JsonRpcProvider,
   contractAddress: string,
   sk: string
@@ -23,3 +24,16 @@ export function initializeContract(
   const contractWithWallet = attachWallet(contract, wallet);
   return contractWithWallet;
 }
+
+export async function initializeContractWithWeb3(
+  provider: providers.JsonRpcProvider,
+  extProvider: providers.ExternalProvider,
+  contractAddress: string
+): Promise<Contract> {
+  const contract = getContract(provider, contractAddress);
+  const signer = await getSigner(extProvider);
+  const contractWithSigner = contract.connect(signer);
+  return contractWithSigner;
+}
+
+
